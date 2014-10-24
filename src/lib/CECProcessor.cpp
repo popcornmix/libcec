@@ -51,7 +51,6 @@ using namespace CEC;
 using namespace std;
 using namespace PLATFORM;
 
-#define CEC_PROCESSOR_SIGNAL_WAIT_TIME 1000
 #define ACTIVE_SOURCE_CHECK_INTERVAL   500
 #define TV_PRESENT_CHECK_INTERVAL      30000
 
@@ -244,6 +243,7 @@ bool CCECProcessor::OnCommandReceived(const cec_command &command)
 
 void *CCECProcessor::Process(void)
 {
+  uint16_t timeout = CEC_PROCESSOR_SIGNAL_WAIT_TIME;
   m_libcec->AddLog(CEC_LOG_DEBUG, "processor thread started");
 
   if (!m_connCheck)
@@ -258,13 +258,13 @@ void *CCECProcessor::Process(void)
   while (!IsStopped() && m_communication->IsOpen())
   {
     // wait for a new incoming command, and process it
-    if (m_inBuffer.Pop(command, CEC_PROCESSOR_SIGNAL_WAIT_TIME))
+    if (m_inBuffer.Pop(command, timeout))
       ProcessCommand(command);
 
     if (CECInitialised() && !IsStopped())
     {
       // check clients for keypress timeouts
-      m_libcec->CheckKeypressTimeout();
+      timeout = m_libcec->CheckKeypressTimeout();
 
       // check if we need to replace handlers
       ReplaceHandlers();
@@ -295,6 +295,8 @@ void *CCECProcessor::Process(void)
         tvPresentCheck.Init(TV_PRESENT_CHECK_INTERVAL);
       }
     }
+    else
+      timeout = CEC_PROCESSOR_SIGNAL_WAIT_TIME;
   }
 
   return NULL;
