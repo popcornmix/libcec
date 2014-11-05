@@ -1121,6 +1121,8 @@ uint16_t CCECClient::CheckKeypressTimeout(void)
   key.keycode = CEC_USER_CONTROL_CODE_UNKNOWN;
   key.duration = 0;
 
+  if (m_iCurrentButton == CEC_USER_CONTROL_CODE_UNKNOWN)
+    return timeout;
   {
     CLockObject lock(m_mutex);
     uint64_t iNow = GetTimeMs();
@@ -1130,8 +1132,7 @@ uint16_t CCECClient::CheckKeypressTimeout(void)
     uint32_t iTimeoutMs(m_configuration.clientVersion >= CEC_CLIENT_VERSION_2_0_5 ?
         m_configuration.iComboKeyTimeoutMs : CEC_DEFAULT_COMBO_TIMEOUT_MS);
 
-    if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN &&
-          m_iCurrentButton == comboKey && iTimeoutMs > 0 && iNow - m_updateButtontime >= iTimeoutMs)
+    if (m_iCurrentButton == comboKey && iTimeoutMs > 0 && iNow - m_updateButtontime >= iTimeoutMs)
     {
       key.duration = (unsigned int) (iNow - m_initialButtontime);
       key.keycode = m_iCurrentButton;
@@ -1144,8 +1145,7 @@ uint16_t CCECClient::CheckKeypressTimeout(void)
       m_pressedButtoncount = 0;
       m_releasedButtoncount = 0;
     }
-    else if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN &&
-          m_iCurrentButton != comboKey && m_releaseButtontime && iNow >= (uint64_t)m_releaseButtontime)
+    else if (m_iCurrentButton != comboKey && m_releaseButtontime && iNow >= (uint64_t)m_releaseButtontime)
     {
       key.duration = (unsigned int) (iNow - m_initialButtontime);
       key.keycode = CEC_USER_CONTROL_CODE_UNKNOWN;
@@ -1158,8 +1158,7 @@ uint16_t CCECClient::CheckKeypressTimeout(void)
       m_pressedButtoncount = 0;
       m_releasedButtoncount = 0;
     }
-    else if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN &&
-          (m_iCurrentButton != comboKey && m_repeatButtontime && iNow >= (uint64_t)m_repeatButtontime))
+    else if (m_iCurrentButton != comboKey && m_repeatButtontime && iNow >= (uint64_t)m_repeatButtontime)
     {
       key.duration = (unsigned int) (iNow - m_initialButtontime);
       key.keycode = m_iCurrentButton;
@@ -1168,11 +1167,11 @@ uint16_t CCECClient::CheckKeypressTimeout(void)
     }
     else
     {
-      if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN && m_iCurrentButton == comboKey && iTimeoutMs > 0)
+      if (m_iCurrentButton == comboKey && iTimeoutMs > 0)
         timeout = std::min((uint64_t)timeout, m_updateButtontime - iNow + iTimeoutMs);
-      if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN && m_iCurrentButton != comboKey && m_releaseButtontime)
+      if (m_iCurrentButton != comboKey && m_releaseButtontime)
         timeout = std::min((uint64_t)timeout, m_releaseButtontime - iNow);
-      if (m_iCurrentButton != CEC_USER_CONTROL_CODE_UNKNOWN && m_iCurrentButton != comboKey && m_repeatButtontime)
+      if (m_iCurrentButton != comboKey && m_repeatButtontime)
         timeout = std::min((uint64_t)timeout, m_repeatButtontime - iNow);
       if (timeout > CEC_PROCESSOR_SIGNAL_WAIT_TIME)
       {
